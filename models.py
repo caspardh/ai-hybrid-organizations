@@ -2,7 +2,7 @@ import logging
 import os
 import random
 import string
-from google import genai
+from google import genai  # type: ignore
 from abc import ABC, abstractmethod
 
 # Use Gemini for now since it has a free API.

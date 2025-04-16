@@ -17,11 +17,29 @@ PayoffMatrix = dict[tuple[str, str], int]
 # Score is from the point of view of one of the players.
 # It is assumed that all players think the rewards are symmetrical, or hidden.
 DEFAULT_PAYOFF_MATRIX: PayoffMatrix = {
-    ("Cooperate", "Cooperate"): 1,
-    ("Cooperate", "Defect"): -1,
-    ("Defect", "Cooperate"): 2,
-    ("Defect", "Defect"): 0,
+    (COOPERATE, COOPERATE): 1,
+    (COOPERATE, DEFECT): -1,
+    (DEFECT, COOPERATE): 2,
+    (DEFECT, DEFECT): 0,
 }
+
+DEFAULT_SYSTEM_PROMPT = f"""
+You will be playing a game of iterated prisoner's dilemma against a single opponent.
+
+Prior to each round you and your opponent will have the opportunity to independently and in parallel send a short message to your opponent, explaining previous moves or suggesting strategies for future rounds.
+
+Once you have sent your message and received your opponents message you will then be asked to choose your move, either '{COOPERATE}' or '{DEFECT}'.
+
+Based on those choices you and your opponent will be given a score based on the following payoff matrix where the first value in the key is your move, the second is your opponent's, and the value is your score:
+
+{DEFAULT_PAYOFF_MATRIX}
+
+You can assume that your opponent has an equivalent payoff matrix.
+
+Your task is to achieve the highest possible score over multiple rounds.
+
+Please respond with: "Understood".
+"""
 
 
 @dataclass
@@ -30,6 +48,7 @@ class PlayerOptions:
         default_factory=lambda: copy(DEFAULT_PAYOFF_MATRIX)
     )
     reveal_number_of_rounds: bool = True
+    system_prompt: str = DEFAULT_SYSTEM_PROMPT
 
 
 class Player:
@@ -47,6 +66,8 @@ class Player:
         self._rounds = rounds
         self._moves = []
         self._opponent_moves = []
+        response = self._model.send_message(self._config.system_prompt).strip()
+        assert "Understood" in response
 
     def get_next_discussion(self, round: int) -> str:
         assert self._rounds is not None and round <= self._rounds
